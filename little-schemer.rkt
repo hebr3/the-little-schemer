@@ -712,9 +712,21 @@
   (λ (aexp)
     "(-> sexp Bool)"
     "returns true if the sexp is a number"
+    "assumes the cadr is one of o+ o* o^"
     (cond
-      [#t #t]
-      [#t #t]
-      [#t #t]
-      [else #t])))
-(numbered? (o+ 3 (o^ 4 5)))
+      [(atom? aexp)
+       (number? aexp)]
+;      [(eq? (car (cdr aexp)) 'o+)
+;       (and (numbered? (car aexp))
+;            (numbered? (caddr aexp)))]
+;      [(eq? (car (cdr aexp)) 'o*)
+;       (and (numbered? (car aexp))
+;            (numbered? (caddr aexp)))]
+;      [(eq? (car (cdr aexp)) 'o^)
+;       (and (numbered? (car aexp))
+;            (numbered? (caddr aexp)))])))
+      [else (and (numbered? (car aexp))
+                 (numbered? (caddr aexp)))])))
+;(and (eq? (numbered? '(3 o+ (4 o^ 5)))
+;          #t)
+;     "numbered? works")
