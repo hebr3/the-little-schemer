@@ -730,3 +730,253 @@
 ;(and (eq? (numbered? '(3 o+ (4 o^ 5)))
 ;          #t)
 ;     "numbered? works")
+
+(define value
+  (λ (nexp)
+  "(-> nexp Integer)"
+  "calculates the value of an arithmetic expression"
+    (cond
+      [(atom? nexp) nexp]
+      [(eq? (cadr nexp) 'o+)
+       (o+ (value (car nexp))
+          (value (caddr nexp)))]
+      [(eq? (cadr nexp) 'o*)
+       (o* (value (car nexp))
+          (value (caddr nexp)))]
+      [else
+       (o^ (value (car nexp))
+           (value (caddr nexp)))])))
+;(and (eq? (value 13)
+;          13)
+;     (eq? (value '(1 o+ 3))
+;          4)
+;     (eq? (value '(1 o+ (3 o^ 4)))
+;          82)
+;     "value works")
+
+(define 1st-sub-exp
+  (λ (aexp)
+    "(-> aexp aexp)"
+    "returns the first sub exp"
+    (car (cdr aexp)))) ; cadr
+(define 2nd-sub-exp
+  (λ (aexp)
+    "(-> aexp aexp)"
+    "returns the second sub exp"
+    (car (cdr (cdr aexp))))) ; caddr
+(define operator ; car)
+  (λ (aexp)
+    (car aexp)))
+(define value2
+  (λ (nexp)
+    "(-> nexp Integer)"
+    "calculates the value of an arithmetic expression"
+    (cond
+      [(atom? nexp) nexp]
+      [(eq? (operator nexp) 'o+)
+       (o+ (value2 (1st-sub-exp nexp))
+           (value2 (2nd-sub-exp nexp)))]
+      [(eq? (operator nexp) 'o*)
+       (o* (value2 (1st-sub-exp nexp))
+           (value2 (2nd-sub-exp nexp)))]
+      [(eq? (operator nexp) 'o^)
+       (o^ (value2 (1st-sub-exp nexp))
+           (value2 (2nd-sub-exp nexp)))])))
+;(and (eq? (value2 '(o+ 3 4))
+;          7)
+;     (eq? (value2 '(o+ 1 3))
+;          4)
+;     "value2 works")
+
+(define sero?
+  (λ (n)
+    "(-> rep Bool)"
+    "0 = '()"
+    (empty? n)))
+;(and (eq? (sero? '())
+;          #t)
+;     (eq? (sero? '(()))
+;          #f)
+;     "sero? works")
+
+(define edd1
+  (λ (n)
+    "(-> (Listof empty) (Listof empty))"
+    "returns a list with '() cons to the front"
+    (cons '() n)))
+;(and (equal? (edd1 '())
+;             '(()))
+;     (equal? (edd1 '(()))
+;             '(() ()))
+;     "edd1 works")
+
+(define zub1
+  (λ (n)
+    "(-> (Listof empty) (Listof empty))"
+    "returns the cdr of a list"
+    (cdr n)))
+;(and (equal? (zub1 '(()))
+;             '())
+;     (equal? (zub1 '(() ()))
+;             '(()))
+;     "zub1 works")
+
+(define u+
+  (λ (n m)
+    (cond
+      [(sero? m) n]
+      [else (edd1 (u+ n (zub1 m)))])))
+;(and (equal? (u+ '() '(()))
+;             '(()))
+;     (equal? (u+ '(()) '(()))
+;             '(() ()))
+;     (equal? (u+ '(() ()) '(() ()))
+;             '(() () () ()))
+;     "u+ works")
+
+;; Chapter 7
+
+(define oset?
+  (λ (lat)
+    "(-> (Listof atom) Bool)"
+    "returns true if no element occurs twice"
+    (cond
+      [(empty? lat) #t]
+      [(member? (car lat) (cdr lat)) #f]
+      [else (oset? (cdr lat))]))) ; ])))
+;(and (eq? (oset? '(apple peaches apple plum))
+;          #f)
+;     (eq? (oset? '(apples peaches pears plums))
+;          #t)
+;     (eq? (oset? '())
+;          #t)
+;     (eq? (oset? '(apple 3 pear 4 9 apple 3 4))
+;          #f)
+;     "oset? works")
+
+(define makeset
+  (λ (lat)
+    "(-> (Listof atoms) (Listof atoms))"
+    "returns a set from two lists of atoms"
+    (cond
+      [(empty? lat) '()]
+;      [(member? (car lat) (cdr lat))
+;       (makeset (cdr lat))]
+;      [else (cons (car lat)
+;                  (makeset (cdr lat)))])))
+      [else (cons (car lat)
+                  (makeset (multirember (car lat) (cdr lat))))])))
+;(and (equal? (makeset '(apple peach pear peach plum apple lemon peach))
+;             '(apple peach pear plum lemon))
+;     (equal? (makeset '(apple 3 pear 4 9 apple 3 4))
+;             '(apple 3 pear 4 9))
+;     "makeset works")
+
+(define subset?
+  (λ (set1 set2)
+    "(-> (Listof atoms) (Listof atoms) Boolean)"
+    "returns true if set1 is a subset of set2"
+    (cond
+      [(empty? set1) #t]
+      [else (and (member? (car set1) set2)
+                 (subset? (cdr set1) set2))])))
+;(and (eq? (subset? '(5 chicken wings)
+;                   '(5 hamburgers
+;                     2 pieces fried chicken and
+;                     light duckling wings))
+;          #t)
+;     (eq? (subset? '(4 pounds of horseradish)
+;                   '(four pounds of chickend and
+;                     5 ounces horseradish))
+;          #f)
+;     "subset? works")
+
+(define eqset?
+  (λ (set1 set2)
+    "(-> (Listof atoms) (Listof atoms) Boolean)"
+    "returns true if set1 = set2"
+    (and (subset? set1 set2)
+         (subset? set2 set1))))
+;    (cond
+;      [(and (empty? set1) (empty? set2)) #t]
+;      [(or (empty? set1) (empty? set2)) #f]
+;      [else (and (member? (car set1) set2)
+;                 (eqset? (rember (car set1) set1)
+;                         (rember (car set1) set2)))])))
+;(and (eq? (eqset? '(6 large chickens with wings)
+;                  '(6 chickens with large wings))
+;          #t)
+;     "eqset? works")
+
+(define intersect?
+  (λ (set1 set2)
+    "(-> (Listof atoms) (Listof atoms) Boolean)"
+    "return true if at least one element in set1 is in set2"
+    (cond
+      [(empty? set1) #t]
+      [else (or (member? (car set1) set2)
+                (intersect? (cdr set1) set2))])))
+;(and (eq? (intersect? '(stewed tomatoes and macaroni)
+;                     '(macaroni and cheese))
+;          #t)
+;     "intersect? works")
+
+(define intersect
+  (λ (set1 set2)
+    "(-> (Listof atoms) (Listof atoms) (Listof atoms))"
+    "returns a list of atoms that are in both sets"
+    (cond
+      [(empty? set1) '()]
+      [(member? (car set1) set2)
+       (cons (car set1)
+             (intersect (cdr set1) set2))]
+      [else (intersect (cdr set1) set2)])))
+;(and (equal? (intersect '(stewed tomatoes and macaroni)
+;                        '(macaroni and cheese))
+;             '(and macaroni))
+;     "intersect works")
+
+(define union
+  (λ (set1 set2)
+    "(-> (Listof atoms) (Listof atoms) (Listof atoms))"
+    "returns the union of the two lists"
+    (cond
+      [(empty? set1) set2]
+      [(member? (car set1) set2) (union (cdr set1) set2)]
+      [else (cons (car set1)
+                  (union (cdr set1) set2))])))
+;(and (equal? (union '(stewed tomatoes and macaroni casserole)
+;                    '(macaroni and cheese))
+;             '(stewed tomatoes casserole macaroni and cheese))
+;     "union works")
+
+(define set-diff ;xxx
+  (λ (set1 set2)
+    "(-> (Listof atoms) (Listof atoms) (Listof atoms))"
+    "returns set1 without the elements that are in set2"
+    (cond
+      [(empty? set1) '()]
+      [(member? (car set1) set2) (set-diff (cdr set1) set2)]
+      [else (cons (car set1)
+                  (set-diff (cdr set1) set2))])))
+;(and (equal? (set-diff '(a b c d e)
+;                       '(c d))
+;             '(a b e))
+;     "set-diff works")
+
+(define intersectall
+  (λ (l-set)
+    "(-> (Listof (Listof atoms)) (Listof atoms))"
+    "returns the intersection of all sub-lists in l-set"
+    (cond
+      [(empty? (cdr l-set)) (car l-set)]
+      [else (intersect (car l-set)
+                       (intersectall (cdr l-set)))])))
+;(and (equal? (intersectall '((a b c) (c a d e) (e f g h a b)))
+;             '(a))
+;     (equal? (intersectall '((6 pears and)
+;                             (3 peaches and 6 peppers)
+;                             (8 pears and 6 plums)
+;                             (and 6 prunes with some apples)))
+;             '(6 and))
+;     "intersectall works")
