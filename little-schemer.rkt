@@ -1171,36 +1171,46 @@
 ;; Lambda the Ultimate
 
 (define rember-f
-  (λ (test? a l)
-    "(-> (-> sexp Bool) atom (Listof atoms))"
-    "return a list where every (test? atom) is removed if true"
-    (cond
-      [(empty? l) '()]
-      [(test? a (car l))
-       (rember-f test? a (cdr l))]
-      [else
-       (cons (car l)
-             (rember-f test? a (cdr l)))])))
-;(and (equal? (rember-f o= 5 '(6 2 5 3))
+;  (λ (test? a l)
+  (λ (test?)
+    (λ (a l)
+      "(-> (-> sexp Bool) atom (Listof atoms))"
+      "return a list where every (test? atom) is removed if true"
+      (cond
+        [(empty? l) '()]
+        [(test? a (car l)) (cdr l)]
+        [else
+         (cons (car l)
+               ((rember-f test?) a (cdr l)))]))))
+;(and (equal? ((rember-f o=) 5 '(6 2 5 3))
 ;             '(6 2 3))
-;     (equal? (rember-f eq? 'jelly '(jelly beans are good))
+;     (equal? ((rember-f eq?) 'jelly '(jelly beans are good))
 ;             '(beans are good))
-;     (equal? (rember-f equal? '(pop corn) '(lemonade
+;     (equal? ((rember-f equal?) '(pop corn) '(lemonade
 ;                                            (pop corn)
 ;                                            and
 ;                                            (cake)))
 ;             '(lemonade and (cake)))
 ;     "rember-f works")
 
-;(define rember=
+(define rember-= (rember-f o=))
 ;  (λ (a l)
-;    (rember-f o= a l)))
-;(define rember-eq
+;    ((rember-f o=) a l)))
+
+(define rember-eq? (rember-f eq?))
 ;  (λ (a l)
-;    (rember-f eq? a l)))
-;(define rember-equal
+;    ((rember-f eq?) a l)))
+;(and (equal? (rember-eq? 'tuna '(tuna salid is good))
+;             '(salid is good))
+;     (equal? (rember-eq? 'tuna '(shrimp salad and tuna salad))
+;             '(shrimp salad and salad))
+;     (equal? (rember-eq? 'eq? '(equal? eq? eqan? eqlist? eqpair?))
+;             '(equal? eqan? eqlist? eqpair?))
+;     "rember-eq? works")
+
+(define rember-equal? (rember-f equal?))
 ;  (λ (a l)
-;    (rember-f equal? a l)))
+;    ((rember-f equal?) a l)))
 
 
 (define eq?-c
@@ -1217,6 +1227,60 @@
 (define eq?-salad (eq?-c 'salad))
 ;(and (eq? (eq?-salad 'salad)
 ;          #t)
-;     (eq? (eq?-salad 'sala)
+;     (eq? (eq?-salad 'tuna)
+;          #f)
+;     (eq? ((eq?-c 'salad) 'tuna)
 ;          #f)
 ;     "eq?-salad works")
+
+(define seqL
+  (λ (new old l)
+    (cons new (cons old l))))
+(define seqR
+  (λ (new old l)
+    (cons old (cons new l))))
+
+(define insert-g
+  (λ (seq)
+    (λ (new old l)
+      (cond
+        [(empty? l) '()]
+        [(eq? old (car l))
+         (seq new old (cdr l))]
+        [else (cons (car l)
+                    ((insert-g seq) new old cdr l))]))))
+
+(define insertL-f
+  (λ (test?)
+    (λ (new old l)
+      (cond
+        [(empty? l) '()]
+        [(test? old (car l))
+         (cons new (cons old (cdr l)))]
+        [else (cons (car l)
+                    ((insertL-f test?) new old (cdr l)))]))))
+
+(define insertR-f
+  (λ (test?)
+    (λ (new old l)
+      (cond
+        [(empty? l) '()]
+        [(test? old (car l))
+         (cons old (cons new (cdr l)))]
+        [else (cons (car l)
+                    ((insertL-f test? new old (cdr l))))]))))
+
+(define insertL2 ;(insert-g seqL))
+  (insert-g
+   (λ (new old l)
+     (cons new (cons old l)))))
+;(and (equal? (insertL 'a 'b '(b c d b))
+;             (insertL2 'a 'b '(b c d b)))
+;     "insertL2 works")
+(define insertR2 ;(insert-g seqR))
+  (insert-g
+   (λ (new old l)
+     (cons old (cons new l)))))
+;(and (equal? (insertR 'a 'b '(b c d b))
+;             (insertR2 'a 'b '(b c d b)))
+;     "insertR2 works")
