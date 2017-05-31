@@ -731,6 +731,15 @@
 ;          #t)
 ;     "numbered? works")
 
+
+
+(define atom-to-function
+  (λ (x)
+    (cond
+      [(eq? x 'o+) o+]
+      [(eq? x 'o*) o*]
+      [else o^])))
+
 (define value
   (λ (nexp)
   "(-> nexp Integer)"
@@ -773,15 +782,17 @@
     "calculates the value of an arithmetic expression"
     (cond
       [(atom? nexp) nexp]
-      [(eq? (operator nexp) 'o+)
-       (o+ (value2 (1st-sub-exp nexp))
-           (value2 (2nd-sub-exp nexp)))]
-      [(eq? (operator nexp) 'o*)
-       (o* (value2 (1st-sub-exp nexp))
-           (value2 (2nd-sub-exp nexp)))]
-      [(eq? (operator nexp) 'o^)
-       (o^ (value2 (1st-sub-exp nexp))
-           (value2 (2nd-sub-exp nexp)))])))
+;      [(eq? (operator nexp) 'o+)
+;       (o+ (value2 (1st-sub-exp nexp))
+;           (value2 (2nd-sub-exp nexp)))]
+;      [(eq? (operator nexp) 'o*)
+;       (o* (value2 (1st-sub-exp nexp))
+;           (value2 (2nd-sub-exp nexp)))]
+;      [(eq? (operator nexp) 'o^)
+;       (o^ (value2 (1st-sub-exp nexp))
+;           (value2 (2nd-sub-exp nexp)))])))
+       [else ((atom-to-function (operator nexp)) (value (car nexp))
+                                                 (value (caddr nexp)))])))
 ;(and (eq? (value2 '(o+ 3 4))
 ;          7)
 ;     (eq? (value2 '(o+ 1 3))
@@ -1284,3 +1295,63 @@
 ;(and (equal? (insertR 'a 'b '(b c d b))
 ;             (insertR2 'a 'b '(b c d b)))
 ;     "insertR2 works")
+
+(define seqS
+  (λ (new old l)
+    (cons new l)))
+
+(define subst (insert-g seqS))
+
+
+;(define atom-to-function ...)
+
+
+(define multirember-f
+  (λ (test?)
+    (λ (a lat)
+      (cond
+        [(null? lat) '()]
+        [(test? (car lat) a)
+         ((multirember-f test?) a (cdr lat))]
+        [else (cons (car lat)
+                    ((multirember-f test?) a (cdr lat)))]))))
+;(and (equal? ((multirember-f eq?) 'tuna '(shrimp salad tuna salad and tuna))
+;             '(shrimp salad salad and))
+;     "multirember-f works")
+
+
+(define multirember-eq? (multirember-f eq?))
+
+(define eq?-tuna
+  (eq?-c 'tuna))
+
+(define multiremberT
+  (λ (test? lat)
+    (cond
+      [(empty? lat) '()]
+      [(test? (car lat))
+       (multiremberT test? (cdr lat))]
+      [else (cons (car lat)
+                  (multiremberT test? (cdr lat)))])))
+;(and (equal? (multiremberT eq?-tuna '(shrimp salad tuna salad and tuna))
+;             '(shrimp salad salad and))
+;     "multiremberT works")
+
+
+(define multirember&co
+  (λ (a lat col)
+    (cond
+      [(empty? lat)
+       (col '() '())]
+      [(eq? (car lat) a)
+       (multirember&co a (cdr lat) (λ (newlat seen)
+                                     (col newlat (cons (car lat)
+                                                       seen))))]
+      [else
+       (multirember&co a (cdr lat) (λ (newlat seen)
+                                     (col (cons (car lat) newlat)
+                                          seen)))])))
+
+
+(define a-friend
+  (λ (x y) (empty? y)))
