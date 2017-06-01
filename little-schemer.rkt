@@ -1355,3 +1355,14 @@
 
 (define a-friend
   (λ (x y) (empty? y)))
+
+
+(multirember&co 'tuna '(strawberries tuna and swordfish) a-friend)
+(multirember&co 'tuna '() a-friend)
+(multirember&co 'tuna '(tuna) a-friend)
+
+
+(define new-friend
+  (λ (newlat seen)
+    (col newlat
+         (cons (car lat) seen)))
